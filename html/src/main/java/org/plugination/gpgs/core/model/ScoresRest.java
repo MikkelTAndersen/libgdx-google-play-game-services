@@ -37,29 +37,70 @@ public class ScoresRest {
 		      		   timeSpan: timeSpan},
 		      method: 'get',
 		      callback: function(response) {
-		      	instance.@org.plugination.gms.core.model.ScoresRest::handleGetScore(Lcom/google/gwt/core/client/JavaScriptObject;)(response);
+		      	instance.@org.plugination.gpgs.core.model.ScoresRest::handleGetScore(Lcom/google/gwt/core/client/JavaScriptObject;)(response);
 		      }
 		    });
 	}-*/;
 
 	public void handleGetScore(JavaScriptObject response) {
+		List<Score> result = new ArrayList<Score>();
+
 		JSONObject obj = new JSONObject(response);
 		JSONValue jsonValue = obj.get("items");
-		JSONArray items = jsonValue.isArray();
-		List<Score> result = new ArrayList<Score>();
-		for (int i = 0; i < items.size(); i++) {
-			JSONValue scoreData = items.get(i);
-			Score score = new Score();
-			Player player = new Player();
-			JSONValue playerData = scoreData.isObject().get("player");
-			player.setDisplayName(playerData.isObject().get("displayName").toString().replaceAll("\"", ""));
-			player.setAvatarImageUrl(playerData.isObject().get("avatarImageUrl").toString().replaceAll("\"", ""));
-			score.setPlayer(player);
-			score.setScoreRank(new Long(scoreData.isObject().get("scoreRank").toString().replaceAll("\"", "")));
-			score.setScoreValue(new Long(scoreData.isObject().get("scoreValue").toString().replaceAll("\"", "")));
-			result.add(score);
+		if(jsonValue != null ) {
+			JSONArray items = jsonValue.isArray();
+			for (int i = 0; i < items.size(); i++) {
+				JSONValue scoreData = items.get(i);
+				Score score = new Score();
+				Player player = new Player();
+				JSONValue playerData = scoreData.isObject().get("player");
+				player.setDisplayName(playerData.isObject().get("displayName").toString().replaceAll("\"", ""));
+				player.setAvatarImageUrl(playerData.isObject().get("avatarImageUrl").toString().replaceAll("\"", ""));
+				score.setPlayer(player);
+				score.setScoreRank(new Long(scoreData.isObject().get("scoreRank").toString().replaceAll("\"", "")));
+				score.setScoreValue(new Long(scoreData.isObject().get("scoreValue").toString().replaceAll("\"", "")));
+				result.add(score);
+			}
 		}
-
 		responseCallback.onSuccess(result.toArray(new Score[result.size()]));
 	}
+
+	public native void submitScore(String leaderboardId, int score, boolean increment) /*-{
+		if(increment) {
+			var collection = 'PUBLIC';
+			var timeSpan = 'ALL_TIME';
+			$wnd.gapi.client.request({
+			      path: '/games/v1/leaderboards/'+leaderboardId+'/scores/'+collection,
+			      params: {leaderboardId: leaderboardId,
+			      		   collection: collection,
+			      		   timeSpan: timeSpan},
+			      method: 'get',
+			      callback: function(response) {
+			      	console.log(response);
+			      	var oldScore = parseInt(response.numScores) > 0  ? parseInt(response.playerScore.scoreValue) : 0;
+			      	var newScore = oldScore + score;
+			      	console.log(newScore);
+			      	console.log(oldScore);
+			      	console.log(score);
+			      	$wnd.gapi.client.request({
+				      path: '/games/v1/leaderboards/'+leaderboardId+'/scores',
+				      params: {leaderboardId: leaderboardId,
+				      		   score: newScore},
+				      method: 'post',
+				      callback: function(response) {
+				      }
+				    });
+			      }
+			    });
+		} else {
+			$wnd.gapi.client.request({
+			      path: '/games/v1/leaderboards/'+leaderboardId+'/scores',
+			      params: {leaderboardId: leaderboardId,
+			      		   score: score},
+			      method: 'post',
+			      callback: function(response) {
+			      }
+			    });
+	    }
+	}-*/;
 }

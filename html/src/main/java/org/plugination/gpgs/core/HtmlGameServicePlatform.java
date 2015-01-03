@@ -41,9 +41,9 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 	    $wnd.defaultCheckSessionStateCallback = function(isSignedIn){
 			debugger;
 			if (isSignedIn == true) {
-				@org.plugination.gms.core.HtmlGameServicePlatform::callbackSignedIn(*)();
+				@org.plugination.gpgs.core.HtmlGameServicePlatform::callbackSignedIn(*)();
 			} else {
-				@org.plugination.gms.core.HtmlGameServicePlatform::callbackSignInFailed(*)();
+				@org.plugination.gpgs.core.HtmlGameServicePlatform::callbackSignInFailed(*)();
 			}
 	    }
 	}-*/;
@@ -53,11 +53,9 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 	}-*/;
 
 	public static void callbackSignedIn() {
-		consoleLog("WHAT it works1");
 	}
 
 	public static void callbackSignInFailed() {
-		consoleLog("WHAT it works2");
 	}
 
 	@Override
@@ -68,8 +66,7 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 
 	@Override
 	public void submitScore(String leaderboardId, Long score, boolean increment) {
-		// TODO Auto-generated method stub
-
+		new ScoresRest().submitScore(leaderboardId, score.intValue(), increment);
 	}
 
 	@Override
