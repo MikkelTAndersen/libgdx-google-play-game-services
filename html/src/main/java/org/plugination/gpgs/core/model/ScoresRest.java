@@ -43,26 +43,29 @@ public class ScoresRest {
 	}-*/;
 
 	public void handleGetScore(JavaScriptObject response) {
-		List<Score> result = new ArrayList<Score>();
-
-		JSONObject obj = new JSONObject(response);
-		JSONValue jsonValue = obj.get("items");
-		if(jsonValue != null ) {
-			JSONArray items = jsonValue.isArray();
-			for (int i = 0; i < items.size(); i++) {
-				JSONValue scoreData = items.get(i);
-				Score score = new Score();
-				Player player = new Player();
-				JSONValue playerData = scoreData.isObject().get("player");
-				player.setDisplayName(playerData.isObject().get("displayName").toString().replaceAll("\"", ""));
-				player.setAvatarImageUrl(playerData.isObject().get("avatarImageUrl").toString().replaceAll("\"", ""));
-				score.setPlayer(player);
-				score.setScoreRank(new Long(scoreData.isObject().get("scoreRank").toString().replaceAll("\"", "")));
-				score.setScoreValue(new Long(scoreData.isObject().get("scoreValue").toString().replaceAll("\"", "")));
-				result.add(score);
+		try {
+			List<Score> result = new ArrayList<Score>();
+			JSONObject obj = new JSONObject(response);
+			JSONValue jsonValue = obj.get("items");
+			if(jsonValue != null ) {
+				JSONArray items = jsonValue.isArray();
+				for (int i = 0; i < items.size(); i++) {
+					JSONValue scoreData = items.get(i);
+					Score score = new Score();
+					Player player = new Player();
+					JSONValue playerData = scoreData.isObject().get("player");
+					player.setDisplayName(playerData.isObject().get("displayName").toString().replaceAll("\"", ""));
+					player.setAvatarImageUrl(playerData.isObject().get("avatarImageUrl").toString().replaceAll("\"", ""));
+					score.setPlayer(player);
+					score.setScoreRank(new Long(scoreData.isObject().get("scoreRank").toString().replaceAll("\"", "")));
+					score.setScoreValue(new Long(scoreData.isObject().get("scoreValue").toString().replaceAll("\"", "")));
+					result.add(score);
+				}
 			}
+			responseCallback.onSuccess(result.toArray(new Score[result.size()]));
+		} catch (Exception e) {
+			responseCallback.onError(e);
 		}
-		responseCallback.onSuccess(result.toArray(new Score[result.size()]));
 	}
 
 	public native void submitScore(String leaderboardId, int score, boolean increment) /*-{

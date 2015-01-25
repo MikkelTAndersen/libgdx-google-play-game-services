@@ -39,7 +39,6 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 
 	private native void exposeCallback() /*-{
 	    $wnd.defaultCheckSessionStateCallback = function(isSignedIn){
-			debugger;
 			if (isSignedIn == true) {
 				@org.plugination.gpgs.core.HtmlGameServicePlatform::callbackSignedIn(*)();
 			} else {
@@ -49,7 +48,7 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 	}-*/;
 
 	private static native void consoleLog( String message) /*-{
-	    console.log( "me:" + message );
+	    console.log( "GPGS:" + message );
 	}-*/;
 
 	public static void callbackSignedIn() {
@@ -60,8 +59,6 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 
 	@Override
 	public void getPlayer(String playerId, Response<Player> callback) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -76,14 +73,9 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 
 	@Override
 	public void unlockAchievement(String achievementID) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void getAchievements(String id, Response<List<String>> callback) {
-		// TODO Auto-generated method stub
-
 	}
-
 }

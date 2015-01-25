@@ -1,3 +1,4 @@
+
 package org.plugination.gpgs.core;
 
 import java.io.IOException;
@@ -5,13 +6,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.plugination.gpgs.core.GameServices;
-import org.plugination.gpgs.core.GameServicesPlatform;
 import org.plugination.gpgs.core.model.Player;
 import org.plugination.gpgs.core.model.RankType;
 import org.plugination.gpgs.core.model.Score;
 import org.plugination.gpgs.core.model.TimeSpan;
 
+import com.badlogic.gdx.Gdx;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -25,12 +25,12 @@ import com.google.api.services.games.model.LeaderboardEntry;
 import com.google.api.services.games.model.LeaderboardScores;
 import com.google.api.services.games.model.PlayerLeaderboardScoreListResponse;
 
-public class DesktopGameServicePlatform implements GameServicesPlatform{
-	public static void init(Customizer customizer) {
+public class DesktopGameServicePlatform implements GameServicesPlatform {
+	public static void init (Customizer customizer) {
 		GameServices.platform = new DesktopGameServicePlatform(customizer);
 	}
 
-	public static void init(String clientId, String clientSecret) {
+	public static void init (String clientId, String clientSecret) {
 		GameServices.platform = new DesktopGameServicePlatform(new DefaultDesktopCustomizer(clientId, clientSecret));
 	}
 
@@ -40,79 +40,84 @@ public class DesktopGameServicePlatform implements GameServicesPlatform{
 	private Credential credentials;
 	private Games gameAPI;
 
-	private DesktopGameServicePlatform(final Customizer customizer) {
-		if(customizer == null) {
+	private DesktopGameServicePlatform (final Customizer customizer) {
+		if (customizer == null) {
 			throw new IllegalArgumentException("Customizer cannot be null");
 		}
 		try {
-			flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, jsonFactory, customizer.getClientID()+".apps.googleusercontent.com", customizer.getClientSecret(), Collections.singleton(customizer.getScope())).setDataStoreFactory(customizer.getDataStoreFactory()).build();
+			flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, jsonFactory, customizer.getClientID()
+				+ ".apps.googleusercontent.com", customizer.getClientSecret(), Collections.singleton(customizer.getScope()))
+				.setDataStoreFactory(customizer.getDataStoreFactory()).build();
 			try {
 				Credential loadedCredentials = flow.loadCredential("user");
-				if(loadedCredentials != null) {
+				if (loadedCredentials != null) {
 					credentials = loadedCredentials;
 					gameAPI = new Games.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credentials).build();
 				} else {
 					final String redirectUrl = customizer.getRedirectUrl();
-				    String authorizationUrl = flow.newAuthorizationUrl().setRedirectUri(redirectUrl).build();
-				    customizer.showAuthorizationUrl(authorizationUrl);
-				    customizer.getResponse(new Response<String>() {
+					String authorizationUrl = flow.newAuthorizationUrl().setRedirectUri(redirectUrl).build();
+					customizer.showAuthorizationUrl(authorizationUrl);
+					customizer.getResponse(new Response<String>() {
 						@Override
-						public void onSuccess(String code) {
+						public void onSuccess (String code) {
 							try {
-								 GoogleTokenResponse googleTokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUrl).execute();
-									String token = googleTokenResponse.getRefreshToken();
-									try {
-										flow.createAndStoreCredential(googleTokenResponse, "user");
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
-									credentials = new GoogleCredential.Builder()
-							        .setTransport(httpTransport)
-							        .setJsonFactory(jsonFactory)
-							        .setClientSecrets(customizer.getClientID()+".apps.googleusercontent.com", customizer.getClientSecret())
-							        .build().setRefreshToken(token);
-									gameAPI = new Games.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credentials).build();
+								GoogleTokenResponse googleTokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUrl)
+									.execute();
+								String token = googleTokenResponse.getRefreshToken();
+								try {
+									flow.createAndStoreCredential(googleTokenResponse, "user");
+								} catch (IOException e) {
+									Gdx.app.error("GPGS-error", e.getMessage(), e);
+								}
+								credentials = new GoogleCredential.Builder()
+									.setTransport(httpTransport)
+									.setJsonFactory(jsonFactory)
+									.setClientSecrets(customizer.getClientID() + ".apps.googleusercontent.com",
+										customizer.getClientSecret()).build().setRefreshToken(token);
+								gameAPI = new Games.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credentials)
+									.build();
 							} catch (IOException e) {
+								Gdx.app.error("GPGS-error", e.getMessage(), e);
 							}
 						}
 
 						@Override
-						public void onError(Exception e) {
-							e.printStackTrace();
+						public void onError (Exception e) {
+							Gdx.app.error("GPGS-error", e.getMessage(), e);
 						}
 					});
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				Gdx.app.error("GPGS-error", e.getMessage(), e);
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			Gdx.app.error("GPGS-error", e.getMessage(), e);
 		}
 	}
 
 	@Override
-	public void submitScore(String leaderboardId, Long score, boolean increment) {
+	public void submitScore (String leaderboardId, Long score, boolean increment) {
 		try {
 			Long newScore = score;
-			if(increment) {
+			if (increment) {
 				PlayerLeaderboardScoreListResponse scores = gameAPI.scores().get("me", leaderboardId, "ALL").execute();
-				if(!scores.getItems().isEmpty()) {
+				if (!scores.getItems().isEmpty()) {
 					Long oldValue = scores.getItems().get(0).getScoreValue();
 					newScore = oldValue + score;
 				}
 			}
 			gameAPI.scores().submit(leaderboardId, newScore).execute();
 		} catch (IOException e) {
-			e.printStackTrace();
+			Gdx.app.error("GPGS-error", e.getMessage(), e);
 		}
 	}
 
 	@Override
-	public void unlockAchievement(String achievementID) {
+	public void unlockAchievement (String achievementID) {
 	}
 
 	@Override
-	public void getPlayer(String playerId, Response<Player> callback) {
+	public void getPlayer (String playerId, Response<Player> callback) {
 		try {
 			com.google.api.services.games.model.Player loadedPlayer = gameAPI.players().get(playerId).execute();
 			Player player = new Player();
@@ -125,38 +130,41 @@ public class DesktopGameServicePlatform implements GameServicesPlatform{
 	}
 
 	@Override
-	public void getScore(String leaderboardId, RankType rankType, TimeSpan timeSpan, Response<Score[]> callback) {
+	public void getScore (String leaderboardId, RankType rankType, TimeSpan timeSpan, Response<Score[]> callback) {
 		try {
-			LeaderboardScores leaderboardScores = gameAPI.scores().list(leaderboardId, rankType.toString(), timeSpan.toString()).execute();
+			LeaderboardScores leaderboardScores = gameAPI.scores().list(leaderboardId, rankType.toString(), timeSpan.toString())
+				.execute();
 			List<LeaderboardEntry> items = leaderboardScores.getItems();
 			List<Score> result = new ArrayList<Score>();
-			for (LeaderboardEntry leaderboardEntry : items) {
-				Player player = new Player();
-				player.setAvatarImageUrl(leaderboardEntry.getPlayer().getAvatarImageUrl());
-				player.setDisplayName(leaderboardEntry.getPlayer().getDisplayName());
-				Score score = new Score();
-				score.setPlayer(player);
-				score.setScoreRank(leaderboardEntry.getScoreRank());
-				score.setScoreValue(leaderboardEntry.getScoreValue());
-				result.add(score);
+			if (items != null) {
+				for (LeaderboardEntry leaderboardEntry : items) {
+					Player player = new Player();
+					player.setAvatarImageUrl(leaderboardEntry.getPlayer().getAvatarImageUrl());
+					player.setDisplayName(leaderboardEntry.getPlayer().getDisplayName());
+					Score score = new Score();
+					score.setPlayer(player);
+					score.setScoreRank(leaderboardEntry.getScoreRank());
+					score.setScoreValue(leaderboardEntry.getScoreValue());
+					result.add(score);
+				}
 			}
 			callback.onSuccess(result.toArray(new Score[result.size()]));
 		} catch (IOException e) {
-			e.printStackTrace();
+			callback.onError(e);
 		}
 	}
 
 	@Override
-	public void getAchievements(String id, Response<List<String>> callback) {
+	public void getAchievements (String id, Response<List<String>> callback) {
 	}
 
 	public interface Customizer extends GameServicesPlatform.Customizer {
-		DataStoreFactory getDataStoreFactory();
+		DataStoreFactory getDataStoreFactory ();
 
-		void getResponse(Response<String> response);
+		void getResponse (Response<String> response);
 
-		void showAuthorizationUrl(String authorizationUrl);
+		void showAuthorizationUrl (String authorizationUrl);
 
-		String getRedirectUrl();
+		String getRedirectUrl ();
 	}
 }

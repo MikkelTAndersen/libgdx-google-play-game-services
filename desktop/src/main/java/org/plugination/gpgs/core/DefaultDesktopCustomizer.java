@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import org.plugination.gpgs.core.DesktopGameServicePlatform.Customizer;
 import org.plugination.gpgs.core.GameServicesPlatform.Response;
 
+import com.badlogic.gdx.Gdx;
 import com.google.api.client.util.store.DataStoreFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 
@@ -28,7 +29,7 @@ public class DefaultDesktopCustomizer implements Customizer {
 		try {
 			return new FileDataStoreFactory(dataDirectory);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Gdx.app.error("GPGS-error", e.getMessage(), e);
 		}
 		return null;
 	}
@@ -60,7 +61,7 @@ public class DefaultDesktopCustomizer implements Customizer {
 	        try {
 	            desktop.browse(new URI(authorizationUrl));
 	        } catch (Exception e) {
-	            e.printStackTrace();
+	  				Gdx.app.error("GPGS-error", e.getMessage(), e);
 	        }
 	    } else {
 	    	//HANDLE THIS!?!

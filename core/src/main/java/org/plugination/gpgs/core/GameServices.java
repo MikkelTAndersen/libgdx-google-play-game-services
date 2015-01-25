@@ -8,6 +8,9 @@ public class GameServices {
 	}
 
 	public static GameServicesPlatform getPlatform() {
+		if(platform == null) {
+			platform = new DefaultGameServicesPlatform();
+		}
 		return platform;
 	}
 }
