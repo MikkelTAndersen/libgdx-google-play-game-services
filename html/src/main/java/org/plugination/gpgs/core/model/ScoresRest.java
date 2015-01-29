@@ -28,7 +28,7 @@ public class ScoresRest {
 	 * @param responseCallback
 	 * @return
 	 */
-	private native boolean getScoreJS(String leaderboardId, String collection, String timeSpan) /*-{
+	private native void getScoreJS(String leaderboardId, String collection, String timeSpan) /*-{
    		var instance = this;
    		$wnd.gapi.client.request({
 		      path: '/games/v1/leaderboards/'+leaderboardId+'/scores/'+collection,

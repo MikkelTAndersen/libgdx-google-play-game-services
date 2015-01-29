@@ -2,9 +2,8 @@ package org.plugination.gpgs.core;
 
 import java.util.List;
 
-import org.plugination.gpgs.core.GameServices;
-import org.plugination.gpgs.core.GameServicesPlatform;
 import org.plugination.gpgs.core.model.Player;
+import org.plugination.gpgs.core.model.PlayerRest;
 import org.plugination.gpgs.core.model.RankType;
 import org.plugination.gpgs.core.model.Score;
 import org.plugination.gpgs.core.model.ScoresRest;
@@ -59,6 +58,7 @@ public class HtmlGameServicePlatform implements GameServicesPlatform {
 
 	@Override
 	public void getPlayer(String playerId, Response<Player> callback) {
+		new PlayerRest().getPlayer(playerId, callback);
 	}
 
 	@Override
