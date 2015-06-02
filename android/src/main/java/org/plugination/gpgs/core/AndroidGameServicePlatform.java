@@ -44,6 +44,7 @@ public class AndroidGameServicePlatform implements GameServicesPlatform,
 	}
 
 	private GoogleApiClient apiClient;
+	private Context context;
 
 	private AndroidGameServicePlatform(final Customizer customizer, Context context) {
 		if (customizer == null) {
@@ -52,6 +53,10 @@ public class AndroidGameServicePlatform implements GameServicesPlatform,
 		if (context == null) {
 			throw new IllegalArgumentException("Context cannot be null");
 		}
+		this.context = context;
+	}
+
+	public void connect() {
 		try {
 			apiClient = new GoogleApiClient.Builder(context)
 					.addConnectionCallbacks(this)
@@ -62,9 +67,6 @@ public class AndroidGameServicePlatform implements GameServicesPlatform,
 		} catch (Exception e) {
 			Gdx.app.error("GPGS-error", e.getMessage(), e);
 		}
-	}
-
-	public void connect() {
 		apiClient.connect();
 	}
 
