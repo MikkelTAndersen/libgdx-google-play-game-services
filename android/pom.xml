@@ -45,10 +45,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.android.gms</groupId>
-			<artifactId>google-play-services</artifactId>
-			<version>23.0.0</version>
-			<scope>provided</scope>
+			<groupId>google</groupId>
+            <artifactId>play-services</artifactId>
+            <version>1.0.0</version>
 		</dependency>
 	</dependencies>
 </project>

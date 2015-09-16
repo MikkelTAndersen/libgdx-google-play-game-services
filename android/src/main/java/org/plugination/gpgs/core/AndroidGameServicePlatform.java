@@ -8,7 +8,9 @@ import org.plugination.gpgs.core.model.RankType;
 import org.plugination.gpgs.core.model.Score;
 import org.plugination.gpgs.core.model.TimeSpan;
 
-import android.content.Context;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
 
 import com.badlogic.gdx.Gdx;
@@ -29,45 +31,55 @@ import com.google.android.gms.games.leaderboard.Leaderboards.LoadPlayerScoreResu
 import com.google.android.gms.games.leaderboard.Leaderboards.LoadScoresResult;
 import com.google.android.gms.plus.Plus;
 
-public class AndroidGameServicePlatform implements GameServicesPlatform,
-		ConnectionCallbacks, OnConnectionFailedListener {
+public class AndroidGameServicePlatform implements GameServicesPlatform, ConnectionCallbacks, OnConnectionFailedListener {
+	/* Request code used to invoke sign in user interactions. */
+	private static final int RC_SIGN_IN = 1001;
+	/*
+	 * A flag indicating that a PendingIntent is in progress and prevents us
+	 * from starting further intents.
+	 */
+	private boolean intentInProgress;
 
-	public static AndroidGameServicePlatform init(Customizer customizer, Context context) {
-		 GameServices.platform = new AndroidGameServicePlatform(customizer, context);
+	public static AndroidGameServicePlatform init(Customizer customizer, Activity activity) {
+		GameServices.platform = new AndroidGameServicePlatform(customizer, activity);
 		return (AndroidGameServicePlatform)GameServices.platform;
 	}
 
-	public static AndroidGameServicePlatform init(Context context) {
-		GameServices.platform = new AndroidGameServicePlatform(
-				new DefaultAndroidCustomizer(), context);
+	public static AndroidGameServicePlatform init(Activity activity) {
+		GameServices.platform = new AndroidGameServicePlatform(new DefaultAndroidCustomizer(), activity);
 		return (AndroidGameServicePlatform)GameServices.platform;
 	}
 
 	private GoogleApiClient apiClient;
-	private Context context;
+	private Activity activity;
 
-	private AndroidGameServicePlatform(final Customizer customizer, Context context) {
+	private AndroidGameServicePlatform(final Customizer customizer, Activity activity) {
 		if (customizer == null) {
 			throw new IllegalArgumentException("Customizer cannot be null");
 		}
-		if (context == null) {
-			throw new IllegalArgumentException("Context cannot be null");
+		if (activity == null) {
+			throw new IllegalArgumentException("Activity cannot be null");
 		}
-		this.context = context;
+		this.activity = activity;
 	}
 
 	public void connect() {
 		try {
-			apiClient = new GoogleApiClient.Builder(context)
-					.addConnectionCallbacks(this)
-					.addOnConnectionFailedListener(this)
-					.addApi(Plus.API).addScope(Plus.SCOPE_PLUS_LOGIN)
-					.addApi(Games.API).addScope(Games.SCOPE_GAMES)
-					.build();
+			if(apiClient == null) {
+				apiClient = new GoogleApiClient.Builder(activity)
+				.addConnectionCallbacks(this)
+				.addOnConnectionFailedListener(this)
+				.addApi(Plus.API).addScope(Plus.SCOPE_PLUS_LOGIN)
+				.addApi(Games.API).addScope(Games.SCOPE_GAMES)
+				.build();
+			}
+			if(!apiClient.isConnected() && !apiClient.isConnecting()){
+				apiClient.connect();
+			}
 		} catch (Exception e) {
+			e.printStackTrace();
 			Gdx.app.error("GPGS-error", e.getMessage(), e);
 		}
-		apiClient.connect();
 	}
 
 	@Override
@@ -97,18 +109,27 @@ public class AndroidGameServicePlatform implements GameServicesPlatform,
 	@Override
 	public void getPlayer(String playerId, final Response<Player> callback) {
 		try {
-			Games.Players.loadPlayer(apiClient, playerId).setResultCallback(new ResultCallback<Players.LoadPlayersResult>() {
-				@Override
-				public void onResult(LoadPlayersResult result) {
-					if(result.getPlayers().getCount() > 0) {
-						com.google.android.gms.games.Player gpgsPlayer = result.getPlayers().get(0);
-						Player player = new Player();
-						player.setAvatarImageUrl(gpgsPlayer.getIconImageUrl());
-						player.setDisplayName(gpgsPlayer.getDisplayName());
-						callback.onSuccess(player);
+			if("me".equals(playerId)) {
+				com.google.android.gms.games.Player gpgsPlayer = Games.Players.getCurrentPlayer(apiClient);
+				Player player = new Player();
+				player.setAvatarImageUrl(gpgsPlayer.getIconImageUrl());
+				player.setDisplayName(gpgsPlayer.getDisplayName());
+				callback.onSuccess(player);
+			} else {
+				PendingResult<LoadPlayersResult> loadPlayer = Games.Players.loadPlayer(apiClient, playerId);
+				loadPlayer.setResultCallback(new ResultCallback<Players.LoadPlayersResult>() {
+					@Override
+					public void onResult(LoadPlayersResult result) {
+						if(result.getPlayers().getCount() > 0) {
+							com.google.android.gms.games.Player gpgsPlayer = result.getPlayers().get(0);
+							Player player = new Player();
+							player.setAvatarImageUrl(gpgsPlayer.getIconImageUrl());
+							player.setDisplayName(gpgsPlayer.getDisplayName());
+							callback.onSuccess(player);
+						}
 					}
-				}
-			});
+				});
+			}
 		} catch (Exception e) {
 			callback.onError(e);
 		}
@@ -172,7 +193,33 @@ public class AndroidGameServicePlatform implements GameServicesPlatform,
 
 	@Override
 	public void onConnectionFailed(ConnectionResult result) {
+		Gdx.app.error("GPGS-onConnectionFailed", result.getErrorCode()+" - "+ result.toString());
+		if (!intentInProgress && result.hasResolution()) {
+			try {
+				intentInProgress = true;
 
+				result.startResolutionForResult(activity, RC_SIGN_IN);
+			} catch (SendIntentException e) {
+				Gdx.app.error("GPGS-startResolutionForResult","could not send", e);
+
+				// The intent was canceled before it was sent. Return to the
+				// default
+				// state and attempt to connect to get an updated
+				// ConnectionResult.
+				intentInProgress = false;
+				connect();
+			}
+		}
+	}
+
+	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		if (requestCode == RC_SIGN_IN && resultCode == Activity.RESULT_OK) {
+			Gdx.app.error("GPGS-onActivityResult", "requestCode: " + requestCode+",  resultCode: "+ resultCode + " Intent: " + intent);
+		    intentInProgress = false;
+		    if (!apiClient.isConnecting()) {
+				apiClient.connect();
+			}
+		}
 	}
 
 	@Override
@@ -182,6 +229,8 @@ public class AndroidGameServicePlatform implements GameServicesPlatform,
 
 	@Override
 	public void onConnectionSuspended(int cause) {
-
+		if (!apiClient.isConnecting()) {
+			apiClient.connect();
+		}
 	}
 }
