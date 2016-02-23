@@ -43,11 +43,10 @@
 			<version>${android.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
-			<groupId>google</groupId>
-            <artifactId>play-services</artifactId>
-            <version>1.0.0</version>
+		  <groupId>com.google.android.gms</groupId>
+		  <artifactId>google-play-services</artifactId>
+		  <version>23.0.0</version>
 		</dependency>
 	</dependencies>
 </project>
